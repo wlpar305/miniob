@@ -1,100 +1,108 @@
-# MiniOB 概述
+# MiniOB-DBMS: 构建一个完整的数据库管理系统
 
-MiniOB 是 [OceanBase](https://github.com/oceanbase/oceanbase) 团队基于华中科技大学数据库课程原型，联合多所高校重新开发的、专为零基础的同学设计的数据库入门学习项目。我们的目标是为在校学生、数据库从业者、爱好者或对基础技术感兴趣的人提供一个友好的数据库学习项目。
+本项目旨在基于 MiniOB 的基础，构建一个全面的数据库管理系统 (DBMS)。MiniOB 最初是 OceanBase 团队联合多所高校为数据库入门教学而设计的项目，而本分支旨在扩展其范围，致力于创建一个功能更完整、更健壮的数据库系统。
 
-MiniOB 整体代码简洁，容易上手，设计了一系列由浅入深的题目，帮助同学们从零基础入门，迅速了解数据库并深入学习数据库内核。MiniOB 简化了许多模块，例如不考虑并发操作、安全特性和复杂的事务管理等功能，以便更好地学习数据库实现原理。我们期望通过 MiniOB 的训练，同学们能够熟练掌握数据库内核模块的功能和协同关系，并具备一定的工程编码能力，例如内存管理、网络通信和磁盘 I/O 处理等, 这将有助于同学在未来的面试和工作中脱颖而出。
-
-# [文档](https://oceanbase.github.io/miniob/)
-代码配套文档和相关代码注释已经生成文档，并通过 GitHub Pages 发布。您可以直接访问：[MiniOB GitHub Pages](https://oceanbase.github.io/miniob/).
-
-## 快速上手
-
-为了帮助开发者更好地上手并学习 MiniOB，建议阅读以下内容：
-
-1. [MiniOB 框架介绍](https://oceanbase.github.io/miniob/miniob-introduction.html)
-2. [如何编译 MiniOB 源码](https://oceanbase.github.io/miniob/how_to_build.html)
-3. [如何运行 MiniOB](https://oceanbase.github.io/miniob/how_to_run.html)
-4. [使用 GitPod 开发 MiniOB](https://oceanbase.github.io/miniob/dev-env/dev_by_gitpod.html)
-5. [doxygen 代码文档](https://oceanbase.github.io/miniob/design/doxy/html/index.html)
-
-为了帮助大家更好地学习数据库基础知识，OceanBase社区提供了一系列教程。更多文档请参考 [MiniOB GitHub Pages](https://oceanbase.github.io/miniob/)。建议学习：
-
-1. [《从0到1数据库内核实战教程》  视频教程](https://open.oceanbase.com/activities/4921877?id=4921946)
-2. [《从0到1数据库内核实战教程》  基础讲义](https://github.com/oceanbase/kernel-quickstart)
-3. [《数据库管理系统实现》  华中科技大学实现教材](https://oceanbase.github.io/miniob/lectures/index.html)
+将利用 MiniOB 清晰的模块化设计，同时增强现有组件并添加生产级 DBMS 所需的新功能。
 
 ## 系统架构
 
-MiniOB 整体架构如下图所示:
-![架构](docs/src/images/miniob-introduction-sql-flow.png)
+系统采用模块化架构，通过一系列定义清晰的阶段处理 SQL 查询，并由阶段式事件驱动架构 (SEDA) 进行协调。
 
-其中:
-
-- 网络模块：负责与客户端交互，收发客户端请求与应答；
-
-- SQL解析：将用户输入的SQL语句解析成语法树；
-
-- 执行计划缓存：执行计划缓存模块会将该 SQL第一次生成的执行计划缓存在内存中，后续的执行可以反复执行这个计划，避免了重复查询优化的过程（未实现）。
-
-- 语义解析模块：将生成的语法树，转换成数据库内部数据结构（部分实现）；
-
-- 查询缓存：将执行的查询结果缓存在内存中，下次查询时，可以直接返回（未实现）；
-
-- 查询优化：根据一定规则和统计数据，调整/重写语法树。(部分实现)；
-
-- 计划执行：根据语法树描述，执行并生成结果；
-
-- 会话管理：管理用户连接、调整某个连接的参数；
-
-- 元数据管理：记录当前的数据库、表、字段和索引元数据信息；
-
-- 客户端：作为测试工具，接收用户请求，向服务端发起请求。
+```mermaid
+graph TD
+    Client[客户端] --> Network[网络层];
+    Network --> SessionStage[会话阶段];
+    SessionStage --> ParseStage[解析阶段];
+    ParseStage --> ResolveStage[语义分析阶段];
+    ResolveStage --> OptimizeStage[优化阶段];
+    OptimizeStage -- Physical Plan [物理计划] --> ExecuteStage[执行阶段];
+    OptimizeStage -- Command [命令] --> ExecuteStage;
+    ExecuteStage --> StorageEngine[存储引擎];
+    StorageEngine --> ExecuteStage;
+    ExecuteStage --> Network;
 
 
-# [OceanBase 大赛](https://open.oceanbase.com/competition)
+    subgraph SQL 处理流水线 (SEDA 阶段)
+        direction LR
+        SessionStage --> ParseStage --> ResolveStage --> OptimizeStage --> ExecuteStage
+    end
 
-2022 OceanBase 数据库大赛是由中国计算机学会（CCF）数据库专业委员会指导，OceanBase 与蚂蚁技术研究院学术合作团队联合举办的数据库内核实战赛事。本次大赛主要面向全国爱好数据库的高校学生，以“竞技、交流、成长”为宗旨，搭建基于赛事的技术交流平台，促进高校创新人才培养机制，不仅帮助学生从0开始系统化学习数据库理论知识，提升学生数据库实践能力，更能帮助学生走向企业积累经验，促进国内数据库人才的发展，碰撞出创新的火花。
+    subgraph 核心组件
+        Network[网络层 (`src/observer/net`)]
+        StorageEngine[存储引擎 (`src/observer/storage`)]
+        SessionManager[会话管理器 (`src/observer/session`)]
+        EventManager[事件管理器 (`deps/common/seda`, `src/observer/event`)]
+    end
 
-OceanBase 初赛基于一套适合初学者实践的数据库实训平台 MiniOB，代码量少，易于上手学习，包含了数据库的各个关键模块，是一个系统性的数据库学习平台。基于该平台设置了一系列由浅入深的题目，以帮助同学们更好"零"基础入门。
+    SessionStage -.-> SessionManager;
+    ExecuteStage -.-> SessionManager;
+    StorageEngine -.-> SessionManager;
+    ExecuteStage -.-> EventManager;
+    Network -.-> EventManager;
 
-2023 OceanBase 数据库大赛正在火热进行, 更多详情, 请参考 [OceanBase 大赛](https://open.oceanbase.com/competition/index)。
+```
 
-### 1. 大赛手把手入门教程
+**核心模块与处理流程:**
 
-[大赛入门教程](https://oceanbase.github.io/miniob/game/gitee-instructions.html)
+1.  **网络层 (`src/observer/net`):**
+    *   监听客户端连接 (例如，通过 `mysql_communicator.cpp` 实现 MySQL 协议)。
+    *   接收 SQL 查询并发送回结果。
+    *   通过 `Communicator` 管理连接状态。
 
-### 2. 大赛赛题
+2.  **会话管理器 (`src/observer/session`):**
+    *   管理用户会话 (`Session`)，每个会话对应一个连接。
+    *   跟踪会话状态，包括当前数据库 (`Db`) 和活动事务 (`Trx`)。
 
-[赛题介绍](https://oceanbase.github.io/miniob/game/miniob_topics.html) 
+3.  **事件管理器 (`deps/common/seda`, `src/observer/event`):**
+    *   实现阶段式事件驱动架构 (SEDA)，用于异步处理请求。
+    *   定义事件，如 `SessionEvent` (初始请求) 和 `SQLStageEvent` (在 SQL 处理阶段间传递)。
 
-### 3. 提交测试
+4.  **SQL 处理流水线 (位于 `src/observer/session/session_stage.cpp` 中的 SEDA 阶段):**
+    *   **`SessionStage`**: 入口点，接收 `SessionEvent`，创建 `SQLStageEvent`。
+    *   **`ParseStage`**: 调用 SQL 解析器 (`src/observer/sql/parser`)。
+        *   使用 Lex (`lex_sql.l`) 和 Yacc (`yacc_sql.y`) 进行词法和语法分析。
+        *   生成初始的抽象语法树 (AST)，由 `ParsedSqlNode` 表示。
+    *   **`ResolveStage`**: 执行语义分析。
+        *   根据数据库模式和元数据 (表/列存在性、类型、权限 - *部分实现*) 验证 `ParsedSqlNode`。
+        *   解析名称并将 AST 转换为内部表示 (`Stmt` 对象，定义在 `src/observer/sql/stmt`)。
+    *   **`OptimizeStage`**: 生成高效的执行计划 (`src/observer/sql/optimizer`)。
+        *   从 `Stmt` 创建逻辑计划 (`LogicalOperator`)。
+        *   应用基于规则的重写 (`Rewriter`, 例如 `PredicatePushdownRewriter`)。
+        *   (*未来: 基于代价的优化*)
+        *   生成描述确切执行步骤的物理计划 (`PhysicalOperator`)。
+        *   识别由 `CommandExecutor` 直接处理的 DDL/实用程序命令。
+    *   **`ExecuteStage`**: 执行查询 (`src/observer/sql/executor`)。
+        *   如果存在 `PhysicalOperator` 树，则迭代执行计划 (例如 `TableScanPhysicalOperator`, `IndexScanPhysicalOperator`, `PredicatePhysicalOperator`, `JoinPhysicalOperator`) 以产生结果。
+        *   如果是命令 (如 `CREATE TABLE`)，则调用相应的 `CommandExecutor` (`src/observer/sql/executor/command_executor.h` 及具体执行器如 `create_table_executor.h`)。
+        *   将结果 (数据行、受影响行数或错误) 填充到 `SqlResult` 对象中。
 
-题目完成并通过自测后，大家可以在 [MiniOB 训练营](https://open.oceanbase.com/train?questionId=500003) 上提交代码进行测试。
+5.  **存储引擎 (`src/observer/storage`):**
+    *   **缓冲池管理器 (`buffer/`):** 管理磁盘页 (`Page`) 在内存 (`Frame`) 中的缓存，以最小化磁盘 I/O。每个文件使用 `DiskBufferPool`，并共享 `BPFrameManager`。实现页面替换策略 (*基本实现*)。
+    *   **记录管理器 (`record/`):** 处理页面内记录 (`Record`) 的存储布局。使用 `RecordFileHandler` (文件级) 和 `RecordPageHandler` (页面级)。记录由 `RID` (PageNum, SlotNum) 标识。
+    *   **索引管理器 (`index/`):** 管理索引结构。包含 B+ 树实现 (`BPlusTreeIndex`)，用于基于键值的高效数据查找。提供 `IndexScanner` 用于索引遍历。
+    *   **事务管理器 (`trx/`):** 管理事务 (`Trx`)，确保 ACID 属性 (*基本实现*)。协调日志记录和恢复。处理并发控制 (*最小实现*)。
+    *   **日志管理器 (`clog/`):** 实现预写日志 (WAL)。`CLogManager` 将日志记录 (`CLogRecord`) 写入提交日志文件以用于恢复。处理事务开始、提交和回滚的日志条目。
+    *   **元数据/数据库管理器 (`db/`, `table/`):** 管理数据库 (`Db`) 和表 (`Table`) 定义。`TableMeta` 存储模式信息 (字段、类型、索引)。处理表及其关联文件 (元数据、数据、索引) 的创建和打开。
 
-在提交前, 请参考并学习 [训练营使用说明](https://ask.oceanbase.com/t/topic/35600372)。
+## 快速上手
 
-### 4. 大赛FAQ
+*(保留或更新构建/运行说明)*
 
-[大赛 FAQ ](https://ask.oceanbase.com/t/topic/35601465)
+1.  **环境依赖:** ...
+2.  **编译:**
+    ```bash
+    # 确保已安装 cmake, make, gcc/g++, flex, bison
+    bash build.sh --make -j4
+    ```
+3.  **运行服务端:**
+    ```bash
+    cd build/bin
+    ./observer -f ../../etc/observer.ini
+    ```
+4.  **运行客户端:**
+    ```bash
+    cd build/bin
+    ./client
+    ```
+    或者使用任何兼容 MySQL 协议的客户端连接到默认端口 `6789`。
 
-# 在线开发平台
-
-本仓库基于 Gitpod 建立了快速在线开发平台。点击下面的按钮即可一键体验（建议使用 Chrome 浏览器）。
-
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/oceanbase/miniob)
-
-首次进入 Gitpod 时需要安装一些依赖。安装完成后，终端界面会显示 "Dependency installed successfully"。运行 `bash build.sh --make -j4` 命令即可编译 MiniOB。
-
-# Contributing
-
-OceanBase 社区热情欢迎每一位对数据库技术热爱的开发者，期待与您携手开启思维碰撞之旅。无论是文档格式调整或文字修正、问题修复还是增加新功能，都是参与和贡献 OceanBase 社区的方式之一。现在就开始您的首次贡献吧！更多详情，请参考 [社区贡献](CONTRIBUTING.md).
-
-# License
-
-MiniOB 采用 [木兰宽松许可证，第2版](https://license.coscl.org.cn/MulanPSL2), 可以自由拷贝和使用源码, 当做修改或分发时, 请遵守 [木兰宽松许可证，第2版](https://license.coscl.org.cn/MulanPSL2). 
-
-# 社区组织
-
-- [OceanBase 社区交流群 33254054](https://h5.dingtalk.com/circle/healthCheckin.html?corpId=dingd88359ef5e4c49ef87cda005313eea7a&1fe0ca69-72d=16c86a07-83c&cbdbhh=qwertyuiop&origin=1)
-- [OceanBase 大赛官方交流群 35326455](https://qr.dingtalk.com/action/joingroup?code=v1,k1,g61jI0RwHQA8UMocuTbys2cyM7vck2c6jNE87vdxz9o=&_dt_no_comment=1&origin=11)
-- [OceanBase 官方论坛](https://ask.oceanbase.com/)
