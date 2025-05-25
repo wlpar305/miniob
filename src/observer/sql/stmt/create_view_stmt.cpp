@@ -21,6 +21,8 @@ RC CreateViewStmt::create(Db *db, const CreateViewSqlNode &create_view, Stmt *&s
 {
   RC rc = RC::SUCCESS;
 
+  LOG_INFO("Creating view: %s", create_view.view_name.c_str());
+
   // 检查视图名是否已存在（检查表名和视图名）
   if (db->find_table(create_view.view_name.c_str()) != nullptr) {
     LOG_WARN("Table with name %s already exists", create_view.view_name.c_str());
@@ -35,16 +37,19 @@ RC CreateViewStmt::create(Db *db, const CreateViewSqlNode &create_view, Stmt *&s
   // 创建SELECT语句
   SelectStmt *select_stmt = nullptr;
   if (create_view.select_sql_node != nullptr) {
+    LOG_INFO("Creating SELECT statement for view %s", create_view.view_name.c_str());
     rc = SelectStmt::create(db, create_view.select_sql_node->selection, reinterpret_cast<Stmt *&>(select_stmt));
     if (rc != RC::SUCCESS) {
-      LOG_WARN("Failed to create select statement for view %s", create_view.view_name.c_str());
+      LOG_WARN("Failed to create select statement for view %s, rc=%s", create_view.view_name.c_str(), strrc(rc));
       return rc;
     }
+    LOG_INFO("Successfully created SELECT statement for view %s", create_view.view_name.c_str());
   } else {
     LOG_WARN("No select statement provided for view %s", create_view.view_name.c_str());
     return RC::INVALID_ARGUMENT;
   }
 
   stmt = new CreateViewStmt(db, create_view.view_name, select_stmt);
+  LOG_INFO("Successfully created CreateViewStmt for view %s", create_view.view_name.c_str());
   return rc;
 } 

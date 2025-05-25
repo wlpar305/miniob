@@ -18,9 +18,9 @@ See the Mulan PSL v2 for more details. */
 #include <memory>
 
 #include "sql/stmt/stmt.h"
+#include "sql/stmt/select_stmt.h"
 
 class Db;
-class SelectStmt;
 
 /**
  * @brief 表示创建视图的语句
