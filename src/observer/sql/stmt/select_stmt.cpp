@@ -80,8 +80,17 @@ RC SelectStmt::process_from_clause(Db *db, std::vector<Table *> &tables,
 
     Table *table = db->find_table(src_name.c_str());
     if (nullptr == table) {
-      LOG_WARN("no such table. db=%s, table_name=%s", db->name(), src_name.c_str());
-      return RC::SCHEMA_TABLE_NOT_EXIST;
+      // 如果不是表，检查是否是视图
+      View *view = db->find_view(src_name.c_str());
+      if (nullptr == view) {
+        LOG_WARN("no such table or view. db=%s, name=%s", db->name(), src_name.c_str());
+        return RC::SCHEMA_TABLE_NOT_EXIST;
+      }
+      
+      // 对于视图，我们暂时不支持在FROM子句中直接使用
+      // 这需要更复杂的查询重写逻辑
+      LOG_WARN("Views in FROM clause are not yet supported. view=%s", src_name.c_str());
+      return RC::UNIMPLENMENT;
     }
 
     tables.push_back(table);

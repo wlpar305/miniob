@@ -192,6 +192,17 @@ struct DropTableSqlNode
 };
 
 /**
+ * @brief 描述一个create view语句
+ * @ingroup SQLParser
+ * @details 创建视图时，需要指定视图名和查询语句
+ */
+struct CreateViewSqlNode
+{
+  std::string view_name;                  ///< View name
+  std::unique_ptr<ParsedSqlNode> select_sql_node;  ///< Select statement for the view
+};
+
+/**
  * @brief 描述一个create index语句
  * @ingroup SQLParser
  * @details 创建索引时，需要指定索引名，表名，字段名。
@@ -297,6 +308,7 @@ enum SqlCommandFlag
   SCF_DELETE,
   SCF_CREATE_TABLE,
   SCF_DROP_TABLE,
+  SCF_CREATE_VIEW,
   SCF_CREATE_INDEX,
   SCF_DROP_INDEX,
   SCF_SYNC,
@@ -329,6 +341,7 @@ public:
   UpdateSqlNode             update;
   CreateTableSqlNode        create_table;
   DropTableSqlNode          drop_table;
+  CreateViewSqlNode         create_view;
   CreateIndexSqlNode        create_index;
   DropIndexSqlNode          drop_index;
   ShowIndexSqlNode          show_index;

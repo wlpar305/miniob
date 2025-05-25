@@ -23,6 +23,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/string.h"
 #include "storage/table/table_meta.h"
 #include "storage/table/table.h"
+#include "storage/table/view.h"
 #include "storage/common/meta_util.h"
 #include "storage/trx/trx.h"
 #include "storage/clog/clog.h"
@@ -30,6 +31,9 @@ See the Mulan PSL v2 for more details. */
 Db::~Db()
 {
   for (auto &iter : opened_tables_) {
+    delete iter.second;
+  }
+  for (auto &iter : opened_views_) {
     delete iter.second;
   }
   LOG_INFO("Db has been closed: %s", name_.c_str());
@@ -107,6 +111,9 @@ Table *Db::find_table(const char *table_name) const
   if (iter != opened_tables_.end()) {
     return iter->second;
   }
+  
+  // 检查是否是视图名，如果是视图，返回nullptr（因为视图不是表）
+  // 这里保持原有行为，视图需要通过find_view方法查找
   return nullptr;
 }
 
@@ -116,6 +123,44 @@ Table *Db::find_table(int32_t table_id) const
     if (pair.second->table_id() == table_id) {
       return pair.second;
     }
+  }
+  return nullptr;
+}
+
+RC Db::create_view(const char *view_name, SelectStmt *select_stmt)
+{
+  RC rc = RC::SUCCESS;
+  
+  // 检查视图名是否已存在
+  if (opened_views_.count(view_name) != 0) {
+    LOG_WARN("View %s has been opened before.", view_name);
+    return RC::SCHEMA_TABLE_EXIST;
+  }
+  
+  // 检查是否与表名冲突
+  if (opened_tables_.count(view_name) != 0) {
+    LOG_WARN("View name %s conflicts with existing table.", view_name);
+    return RC::SCHEMA_TABLE_EXIST;
+  }
+
+  View *view = new View();
+  rc = view->init(view_name, select_stmt);
+  if (rc != RC::SUCCESS) {
+    LOG_ERROR("Failed to create view %s.", view_name);
+    delete view;
+    return rc;
+  }
+
+  opened_views_[view_name] = view;
+  LOG_INFO("Create view success. view name=%s", view_name);
+  return RC::SUCCESS;
+}
+
+View *Db::find_view(const char *view_name) const
+{
+  std::unordered_map<std::string, View *>::const_iterator iter = opened_views_.find(view_name);
+  if (iter != opened_views_.end()) {
+    return iter->second;
   }
   return nullptr;
 }

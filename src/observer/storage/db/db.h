@@ -23,6 +23,8 @@ See the Mulan PSL v2 for more details. */
 #include "sql/parser/parse_defs.h"
 
 class Table;
+class View;
+class SelectStmt;
 class CLogManager;
 
 /**
@@ -46,8 +48,10 @@ public:
   RC init(const char *name, const char *dbpath);
 
   RC create_table(const char *table_name, int attribute_count, const AttrInfoSqlNode *attributes);
+  RC create_view(const char *view_name, SelectStmt *select_stmt);
 
   Table *find_table(const char *table_name) const;
+  View *find_view(const char *view_name) const;
   Table *find_table(int32_t table_id) const;
 
   const char *name() const;
@@ -69,6 +73,7 @@ private:
   std::string name_;
   std::string path_;
   std::unordered_map<std::string, Table *> opened_tables_;
+  std::unordered_map<std::string, View *> opened_views_;
   std::unique_ptr<CLogManager> clog_manager_;
 
   /// 给每个table都分配一个ID，用来记录日志。这里假设所有的DDL都不会并发操作，所以相关的数据都不上锁

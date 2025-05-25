@@ -82,6 +82,7 @@ AggrFuncType get_aggr_func_type(char *func_name)
         DROP
         TABLE
         TABLES
+        VIEW
         INDEX
         CALC
         SELECT
@@ -224,6 +225,7 @@ AggrFuncType get_aggr_func_type(char *func_name)
 %type <sql_node>            delete_stmt
 %type <sql_node>            create_table_stmt
 %type <sql_node>            drop_table_stmt
+%type <sql_node>            create_view_stmt
 %type <sql_node>            show_tables_stmt
 %type <sql_node>            desc_table_stmt
 %type <sql_node>            create_index_stmt
@@ -265,6 +267,7 @@ command_wrapper:
   | delete_stmt
   | create_table_stmt
   | drop_table_stmt
+  | create_view_stmt
   | show_tables_stmt
   | desc_table_stmt
   | create_index_stmt
@@ -446,6 +449,17 @@ create_table_stmt:    /*create table 语句的语法解析树*/
       free($3);
     }
     ;
+
+create_view_stmt:    /*create view 语句的语法解析树*/
+    CREATE VIEW ID AS select_stmt
+    {
+      $$ = new ParsedSqlNode(SCF_CREATE_VIEW);
+      $$->create_view.view_name = $3;
+      $$->create_view.select_sql_node = std::unique_ptr<ParsedSqlNode>($5);
+      free($3);
+    }
+    ;
+
 attr_def_list:
     /* empty */
     {
