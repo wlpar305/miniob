@@ -114,12 +114,12 @@ RC FieldMeta::from_json(const Json::Value &json_value, FieldMeta &field)
     return RC::INTERNAL;
   }
 
-  const Json::Value &name_value = json_value[FIELD_NAME];
-  const Json::Value &type_value = json_value[FIELD_TYPE];
-  const Json::Value &offset_value = json_value[FIELD_OFFSET];
-  const Json::Value &len_value = json_value[FIELD_LEN];
-  const Json::Value &visible_value = json_value[FIELD_VISIBLE];
-  const Json::Value &nullable_value = json_value[FIELD_NULLABLE];
+  const Json::Value &name_value = json_value[FIELD_NAME.c_str()];
+  const Json::Value &type_value = json_value[FIELD_TYPE.c_str()];
+  const Json::Value &offset_value = json_value[FIELD_OFFSET.c_str()];
+  const Json::Value &len_value = json_value[FIELD_LEN.c_str()];
+  const Json::Value &visible_value = json_value[FIELD_VISIBLE.c_str()];
+  const Json::Value &nullable_value = json_value[FIELD_NULLABLE.c_str()];
 
   if (!name_value.isString()) {
     LOG_ERROR("Field name is not a string. json value=%s", name_value.toStyledString().c_str());

@@ -53,10 +53,10 @@ void IndexMeta::to_json(Json::Value &json_value) const
 
 RC IndexMeta::from_json(const TableMeta &table, const Json::Value &json_value, IndexMeta &index)
 {
-  const Json::Value &name_value = json_value[FIELD_NAME];
-  const Json::Value &unique = json_value[FIELD_UNIQUE];
-  const Json::Value &field_num = json_value[FIELD_FIELD_NUM];
-  const Json::Value &field_value = json_value[FIELD_FIELD_NAME];
+  const Json::Value &name_value = json_value[FIELD_NAME.c_str()];
+  const Json::Value &unique = json_value[FIELD_UNIQUE.c_str()];
+  const Json::Value &field_num = json_value[FIELD_FIELD_NUM.c_str()];
+  const Json::Value &field_value = json_value[FIELD_FIELD_NAME.c_str()];
   if (!name_value.isString()) {
     LOG_ERROR("Index name is not a string. json value=%s", name_value.toStyledString().c_str());
     return RC::INTERNAL;
