@@ -227,8 +227,8 @@ int TableMeta::serialize(std::ostream &ss) const
 {
 
   Json::Value table_value;
-  table_value["table_id"]   = table_id_;
-  table_value["table_name"] = name_;
+  table_value[FIELD_TABLE_ID]   = table_id_;
+  table_value[FIELD_TABLE_NAME] = name_;
 
   Json::Value fields_value;
   for (const FieldMeta &field : fields_) {
@@ -237,7 +237,7 @@ int TableMeta::serialize(std::ostream &ss) const
     fields_value.append(std::move(field_value));
   }
 
-  table_value["fields"] = std::move(fields_value);
+  table_value[FIELD_FIELDS] = std::move(fields_value);
 
   Json::Value indexes_value;
   for (const auto &index : indexes_) {
@@ -245,7 +245,7 @@ int TableMeta::serialize(std::ostream &ss) const
     index.to_json(index_value);
     indexes_value.append(std::move(index_value));
   }
-  table_value["indexes"] = std::move(indexes_value);
+  table_value[FIELD_INDEXES] = std::move(indexes_value);
 
   Json::StreamWriterBuilder builder;
   Json::StreamWriter *writer = builder.newStreamWriter();
@@ -270,7 +270,7 @@ int TableMeta::deserialize(std::istream &is)
     return -1;
   }
 
-  const Json::Value &table_id_value = table_value["table_id"];
+  const Json::Value &table_id_value = table_value[FIELD_TABLE_ID];
   if (!table_id_value.isInt()) {
     LOG_ERROR("Invalid table id. json value=%s", table_id_value.toStyledString().c_str());
     return -1;
@@ -278,7 +278,7 @@ int TableMeta::deserialize(std::istream &is)
 
   int32_t table_id = table_id_value.asInt();
 
-  const Json::Value &table_name_value = table_value["table_name"];
+  const Json::Value &table_name_value = table_value[FIELD_TABLE_NAME];
   if (!table_name_value.isString()) {
     LOG_ERROR("Invalid table name. json value=%s", table_name_value.toStyledString().c_str());
     return -1;
@@ -286,7 +286,7 @@ int TableMeta::deserialize(std::istream &is)
 
   std::string table_name = table_name_value.asString();
 
-  const Json::Value &fields_value = table_value["fields"];
+  const Json::Value &fields_value = table_value[FIELD_FIELDS];
   if (!fields_value.isArray() || fields_value.size() <= 0) {
     LOG_ERROR("Invalid table meta. fields is not array, json value=%s", fields_value.toStyledString().c_str());
     return -1;
@@ -314,7 +314,7 @@ int TableMeta::deserialize(std::istream &is)
   fields_.swap(fields);
   record_size_ = fields_.back().offset() + fields_.back().len() - fields_.begin()->offset();
 
-  const Json::Value &indexes_value = table_value["indexes"];
+  const Json::Value &indexes_value = table_value[FIELD_INDEXES];
   if (!indexes_value.empty()) {
     if (!indexes_value.isArray()) {
       LOG_ERROR("Invalid table meta. indexes is not array, json value=%s", fields_value.toStyledString().c_str());

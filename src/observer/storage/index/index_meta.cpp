@@ -41,22 +41,22 @@ RC IndexMeta::init(const char *name, bool unique, const std::vector<const FieldM
 
 void IndexMeta::to_json(Json::Value &json_value) const
 {
-  json_value["name"] = name_;
-  json_value["unique"] = unique_;
-  json_value["field_num"] = field_.size();
+  json_value[FIELD_NAME] = name_;
+  json_value[FIELD_UNIQUE] = unique_;
+  json_value[FIELD_FIELD_NUM] = field_.size();
   Json::Value fields;
   for (int i = 0; i < field_.size(); i++) {
     fields[i] = field_[i];
   }
-  json_value["field_name"] = std::move(fields);
+  json_value[FIELD_FIELD_NAME] = std::move(fields);
 }
 
 RC IndexMeta::from_json(const TableMeta &table, const Json::Value &json_value, IndexMeta &index)
 {
-  const Json::Value &name_value = json_value["name"];
-  const Json::Value &unique = json_value["unique"];
-  const Json::Value &field_num = json_value["field_num"];
-  const Json::Value &field_value = json_value["field_name"];
+  const Json::Value &name_value = json_value[FIELD_NAME];
+  const Json::Value &unique = json_value[FIELD_UNIQUE];
+  const Json::Value &field_num = json_value[FIELD_FIELD_NUM];
+  const Json::Value &field_value = json_value[FIELD_FIELD_NAME];
   if (!name_value.isString()) {
     LOG_ERROR("Index name is not a string. json value=%s", name_value.toStyledString().c_str());
     return RC::INTERNAL;
