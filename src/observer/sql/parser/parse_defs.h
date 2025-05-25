@@ -24,6 +24,7 @@ See the Mulan PSL v2 for more details. */
 class Expression;
 class FieldExpr;
 class OrderByUnit;
+class ParsedSqlNode;
 
 typedef enum { AGG_MAX, AGG_MIN, AGG_SUM, AGG_AVG, AGG_COUNT, AGGR_FUNC_TYPE_NUM } AggrFuncType;
 typedef enum { SYS_FUNC_LENGTH, SYS_FUNC_ROUND, SYS_FUNC_DATE_FORMAT,SYS_FUNC_TYPE_NUM } SysFuncType;
@@ -266,8 +267,6 @@ struct SetVariableSqlNode
   std::string name;
   Value       value;
 };
-
-class ParsedSqlNode;
 
 /**
  * @brief 描述一个explain语句
